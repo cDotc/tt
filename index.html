@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nadim — Student Developer | Creative Web Experiences</title>
+<meta name="description" content="Portfolio of Nadim, a student developer exploring web development, interactive design and creative digital experiences.">
+<meta name="theme-color" content="#eef5fc">
+<script>document.documentElement.classList.add('js');</script>
+
+<style>
+/* =========================================================
+   DESIGN TOKENS — LIGHT THEME
+   ========================================================= */
+:root{
+  --bg:#eef5fc;
+  --ink:#0b1b33;            /* main text (very high contrast on light glass) */
+  --ink-dim:#2f4262;        /* secondary text */
+  --ink-faint:#5a6d8c;
+  --accent:#0a77b0;         /* readable cyan-blue for text / icons */
+  --accent-bright:#22c1ee;  /* decorative cyan */
+  --accent-soft:rgba(34,193,238,.16);
+  --glass:rgba(255,255,255,.62);
+  --glass-strong:rgba(255,255,255,.82);
+  --glass-border:rgba(255,255,255,.75);
+  --glass-line:rgba(10,119,176,.16);
+  --shadow:0 18px 44px -20px rgba(20,60,110,.35), inset 0 1px 0 rgba(255,255,255,.9);
+  --radius:20px;
+  --nav-h:62px;
+  --font:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Roboto,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-h) + 20px);-webkit-text-size-adjust:100%}
+body{
+  margin:0;font-family:var(--font);color:var(--ink);background:var(--bg);
+  line-height:1.6;overflow-x:clip;-webkit-font-smoothing:antialiased;
+}
+canvas,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,p{margin:0}
+ul{margin:0;padding:0;list-style:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:8px}
+
+/* =========================================================
+   LAYERS (bottom -> top)
+   0  .bg-canvas   : fixed full-viewport frame animation
+   1  .bg-veil     : light, translucent wash for text readability
+   2  header/main/footer : all website content
+   ========================================================= */
+.bg-canvas{
+  position:fixed;top:0;left:0;width:100%;
+  height:100vh;height:100lvh;     /* large viewport: stable on Android Chrome when the URL bar hides */
+  z-index:0;pointer-events:none;background:var(--bg);
+}
+.bg-veil{
+  position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.35), transparent 70%),
+    linear-gradient(180deg,rgba(238,245,252,.38) 0%,rgba(238,245,252,.10) 45%,rgba(238,245,252,.38) 100%);
+}
+.layer{position:relative;z-index:2}
+
+/* =========================================================
+   GLASS (light)
+   ========================================================= */
+.glass{
+  background:linear-gradient(145deg,rgba(255,255,255,.75),rgba(255,255,255,.5));
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  backdrop-filter:blur(16px) saturate(150%);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow);
+  border-radius:var(--radius);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass{background:rgba(255,255,255,.93)}
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+.nav{
+  position:fixed;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  width:min(960px,calc(100% - 24px));height:var(--nav-h);z-index:100;
+  display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 22px;border-radius:999px;
+}
+.brand{font-weight:800;letter-spacing:.03em;font-size:1.08rem}
+.brand span{color:var(--accent)}
+.nav-links{display:flex;gap:4px}
+.nav-links a{
+  display:block;padding:8px 14px;border-radius:999px;font-size:.92rem;font-weight:500;color:var(--ink-dim);
+  transition:color .2s,background .2s;
+}
+.nav-links a:hover{color:var(--ink);background:rgba(10,119,176,.08)}
+.nav-links a.active{color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px rgba(10,119,176,.25);font-weight:600}
+.nav-toggle{
+  display:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--glass-line);
+  background:rgba(255,255,255,.7);color:var(--ink);cursor:pointer;place-items:center;padding:0;
+}
+.nav-toggle .bars,.nav-toggle .bars::before,.nav-toggle .bars::after{
+  width:18px;height:2px;background:currentColor;border-radius:2px;display:block;position:relative;transition:transform .25s,background .25s;
+}
+.nav-toggle .bars::before,.nav-toggle .bars::after{content:"";position:absolute;left:0}
+.nav-toggle .bars::before{top:-6px}
+.nav-toggle .bars::after{top:6px}
+.nav-toggle[aria-expanded="true"] .bars{background:transparent}
+.nav-toggle[aria-expanded="true"] .bars::before{transform:translateY(6px) rotate(45deg)}
+.nav-toggle[aria-expanded="true"] .bars::after{transform:translateY(-6px) rotate(-45deg)}
+
+@media (max-width:760px){
+  .nav-toggle{display:grid}
+  .nav-links{
+    position:absolute;top:calc(100% + 8px);left:0;right:0;flex-direction:column;gap:2px;padding:10px;border-radius:22px;
+    opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .22s,transform .22s,visibility .22s;
+    background:var(--glass-strong);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+    border:1px solid var(--glass-border);box-shadow:var(--shadow);
+  }
+  .nav-links.open{opacity:1;visibility:visible;transform:none}
+  .nav-links a{padding:13px 16px;font-size:1rem}
+}
+
+/* =========================================================
+   HERO (a normal section — NOT a video box)
+   ========================================================= */
+.hero{
+  min-height:100vh;min-height:100svh;display:flex;align-items:flex-end;
+  padding:calc(var(--nav-h) + 40px) 0 clamp(70px,12vh,120px);
+}
+.wrap{width:min(1080px,calc(100% - 32px));margin:0 auto}
+.hero-copy{width:min(540px,100%);padding:clamp(20px,3.2vw,32px)}
+.eyebrow{font-family:var(--mono);font-size:.78rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.hero-copy h1{
+  font-size:clamp(2.7rem,7vw,4.6rem);line-height:1.02;letter-spacing:-.03em;margin:8px 0 6px;
+  background:linear-gradient(120deg,#0b1b33 25%,#0a77b0 80%);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+.role{font-size:clamp(.98rem,2.2vw,1.12rem);font-weight:700;margin-bottom:12px}
+.intro{color:var(--ink-dim);font-size:clamp(.96rem,2vw,1.03rem);margin-bottom:22px}
+
+.btn{
+  display:inline-flex;align-items:center;gap:10px;padding:13px 26px;border-radius:999px;font-weight:600;font-size:.95rem;
+  color:#fff;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.55);
+  background:linear-gradient(135deg,#0a77b0,#1496c9);
+  box-shadow:0 12px 28px -12px rgba(10,119,176,.7), inset 0 1px 0 rgba(255,255,255,.35);
+  transition:transform .2s,box-shadow .2s;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 16px 32px -12px rgba(10,119,176,.8), inset 0 1px 0 rgba(255,255,255,.4)}
+.btn.ghost{background:rgba(255,255,255,.75);color:var(--ink);border-color:var(--glass-line);box-shadow:none}
+.btn svg{width:16px;height:16px}
+
+.scroll-hint{
+  position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;
+  color:var(--ink-dim);font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
+  pointer-events:none;transition:opacity .3s;
+}
+.scroll-hint i{width:22px;height:36px;border-radius:14px;border:1.5px solid var(--ink-dim);position:relative;background:rgba(255,255,255,.5)}
+.scroll-hint i::after{
+  content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:3px;background:var(--accent);
+  animation:wheel 1.8s ease-in-out infinite;
+}
+@keyframes wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
+.hero{position:relative}
+
+.loader{
+  position:fixed;z-index:90;top:calc(var(--nav-h) + 28px);left:50%;transform:translateX(-50%);
+  padding:8px 16px;border-radius:999px;display:flex;align-items:center;gap:12px;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;color:var(--ink-dim);font-weight:600;
+  transition:opacity .6s,visibility .6s;
+}
+.loader.done{opacity:0;visibility:hidden}
+.loader .bar{width:90px;height:4px;border-radius:4px;background:rgba(10,119,176,.15);overflow:hidden}
+.loader .bar b{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+
+/* =========================================================
+   CONTENT SECTIONS
+   ========================================================= */
+section.block{padding:clamp(40px,7vw,80px) 0}
+/* Heading cards: keep titles readable over the moving background */
+.head{display:inline-block;max-width:min(680px,100%);padding:clamp(18px,3vw,28px) clamp(20px,3.4vw,34px);margin-bottom:24px}
+.kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8px}
+.block h2{font-size:clamp(1.7rem,4.2vw,2.6rem);line-height:1.12;letter-spacing:-.02em}
+.lead{color:var(--ink-dim);max-width:62ch;margin-top:12px}
+
+.panel{padding:clamp(22px,3.5vw,36px)}
+.panel p{color:var(--ink-dim)}
+.panel p+p{margin-top:14px}
+.panel h3{font-size:1.05rem;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  padding:7px 14px;border-radius:999px;font-size:.85rem;color:var(--ink);font-weight:500;
+  background:rgba(10,119,176,.08);border:1px solid var(--glass-line);
+}
+
+.about-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+@media (max-width:820px){.about-grid{grid-template-columns:1fr}}
+
+.grid{display:grid;gap:18px}
+.skills-grid{grid-template-columns:repeat(3,1fr)}
+.skill{padding:24px;transition:transform .25s,border-color .25s}
+.skill:hover{transform:translateY(-4px)}
+.icon{
+  width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:16px;color:var(--accent);
+  background:var(--accent-soft);border:1px solid rgba(10,119,176,.22);
+}
+.icon svg{width:22px;height:22px}
+.skill h3{font-size:1.05rem;margin-bottom:6px}
+.skill p{color:var(--ink-dim);font-size:.92rem}
+.tag{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+@media (max-width:900px){.skills-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.skills-grid{grid-template-columns:1fr}}
+
+.projects-grid{grid-template-columns:repeat(3,1fr)}
+.project{padding:0;overflow:hidden;display:flex;flex-direction:column;transition:transform .25s}
+.project:hover{transform:translateY(-4px)}
+.project .art{
+  height:140px;display:grid;place-items:center;border-bottom:1px solid var(--glass-line);
+  background:
+    radial-gradient(120px 90px at 25% 30%, rgba(34,193,238,.30), transparent 70%),
+    radial-gradient(140px 100px at 80% 80%, rgba(80,130,240,.22), transparent 70%),
+    rgba(255,255,255,.35);
+}
+.project .art svg{width:54px;height:54px;color:var(--accent)}
+.project .body{padding:22px 24px 26px;display:flex;flex-direction:column;flex:1}
+.badge{
+  align-self:flex-start;font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+  padding:4px 10px;border-radius:999px;color:var(--accent);border:1px solid rgba(10,119,176,.28);background:var(--accent-soft);margin-bottom:12px;
+}
+.project h3{font-size:1.15rem;margin-bottom:8px}
+.project p{color:var(--ink-dim);font-size:.93rem;margin-bottom:16px}
+.project .chips{margin-top:auto}
+.project .chip{font-size:.75rem;padding:5px 11px}
+@media (max-width:980px){.projects-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:620px){.projects-grid{grid-template-columns:1fr}}
+
+.approach{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}
+.pillar{padding:18px 16px;border-radius:16px;background:rgba(255,255,255,.6);border:1px solid var(--glass-line);text-align:center}
+.pillar b{display:block;color:var(--accent);font-family:var(--mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+.pillar span{color:var(--ink-dim);font-size:.88rem}
+@media (max-width:760px){.approach{grid-template-columns:1fr 1fr}}
+
+.contact{text-align:center;padding:clamp(30px,6vw,60px) clamp(20px,4vw,48px)}
+.contact .lead{margin:12px auto 26px}
+.contact-links{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.contact-note{margin-top:18px;font-size:.88rem;color:var(--ink-dim)}
+
+footer{padding:0 16px calc(28px + env(safe-area-inset-bottom));text-align:center;font-size:.9rem;font-weight:500}
+footer p{display:inline-block;padding:10px 22px;border-radius:999px;color:var(--ink-dim)}
+
+/* =========================================================
+   REVEAL + REDUCED MOTION
+   ========================================================= */
+.js .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}
+.js .reveal.in{opacity:1;transform:none}
+.js .reveal.d1{transition-delay:.08s}.js .reveal.d2{transition-delay:.16s}.js .reveal.d3{transition-delay:.24s}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .js .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== FIXED FULL-SCREEN BACKGROUND: the 192-frame animation ===== -->
+<canvas class="bg-canvas" id="seq" aria-hidden="true"></canvas>
+<div class="bg-veil" aria-hidden="true"></div>
+
+<div class="loader glass" id="loader" role="status" aria-live="polite">
+  <span id="loaderText">Loading 0%</span>
+  <span class="bar"><b id="loaderBar"></b></span>
+</div>
+
+<!-- ============ NAVIGATION ============ -->
+<header class="nav glass" id="nav">
+  <a href="#home" class="brand" aria-label="Nadim — back to top">Nadim<span>.</span></a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+    <span class="bars" aria-hidden="true"></span>
+  </button>
+  <nav aria-label="Primary">
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home" data-spy="home">Home</a></li>
+      <li><a href="#about" data-spy="about">About</a></li>
+      <li><a href="#skills" data-spy="skills">Skills</a></li>
+      <li><a href="#projects" data-spy="projects">Projects</a></li>
+      <li><a href="#contact" data-spy="contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="layer">
+
+<!-- ============ A. HERO ============ -->
+<section class="hero" id="home" aria-label="Introduction">
+  <div class="wrap">
+    <div class="hero-copy glass">
+      <p class="eyebrow">Portfolio</p>
+      <h1>Nadim</h1>
+      <p class="role">Student Developer | Creative Web Experiences</p>
+      <p class="intro">I explore web development, interactive design, and creative digital experiences by turning ideas into practical projects.</p>
+      <a href="#projects" class="btn">Explore My Work
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+      </a>
+    </div>
+  </div>
+  <div class="scroll-hint" id="scrollHint" aria-hidden="true"><i></i><span>Scroll</span></div>
+</section>
+
+<!-- ============ B. ABOUT ============ -->
+<section class="block" id="about" aria-labelledby="aboutTitle">
+  <div class="wrap">
+    <div class="head glass reveal">
+      <p class="kicker">About</p>
+      <h2 id="aboutTitle">A student exploring the web.</h2>
+    </div>
+    <div class="about-grid">
+      <div class="glass panel reveal d1">
+        <p>I'm Nadim, a student who is exploring web development and creative digital experiences. I enjoy learning by building: starting with an idea, sketching how it should feel, and turning it into something that works in the browser.</p>
+        <p>Right now I'm practising the fundamentals — HTML, CSS and JavaScript — while experimenting with responsive design, interactive interfaces and animation. I also use AI-assisted development as a way to learn faster, test ideas and understand code better.</p>
+      </div>
+      <div class="glass panel reveal d2">
+        <h3>Currently exploring</h3>
+        <div class="chips">
+          <span class="chip">HTML</span>
+          <span class="chip">CSS</span>
+          <span class="chip">JavaScript</span>
+          <span class="chip">Responsive design</span>
+          <span class="chip">Interactive interfaces</span>
+          <span class="chip">Animation</span>
+          <span class="chip">AI-assisted development</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ C. SKILLS ============ -->
+<section class="block" id="skills" aria-labelledby="skillsTitle">
+  <div class="wrap">
+    <div class="head glass reveal">
+      <p class="kicker">Skills &amp; Technologies</p>
+      <h2 id="skillsTitle">What I'm learning and practising.</h2>
+      <p class="lead">These are areas I'm actively studying and building with — a learning path rather than a finished résumé.</p>
+    </div>
+
+    <div class="grid skills-grid">
+      <article class="glass skill reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></div>
+        <h3>HTML</h3>
+        <p>Semantic structure and accessible markup as the foundation of every page.</p>
+        <span class="tag">Learning &amp; practising</span>
+      </article>
+      <article class="glass skill reveal d1">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 9v11"/></svg></div>
+        <h3>CSS</h3>
+        <p>Layouts, typography, gradients and glass-style visual design.</p>
+        <span class="tag">Learning &amp; practising</span>
+      </article>
+      <article class="glass skill reveal d2">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4C6 4 7 8 5 10c2 2 1 6 4 6M15 4c3 0 2 4 4 6-2 2-1 6-4 6"/></svg></div>
+        <h3>JavaScript</h3>
+        <p>Adding behaviour, logic and interactivity to web pages.</p>
+        <span class="tag">Learning &amp; practising</span>
+      </article>
+      <article class="glass skill reveal">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="14" height="10" rx="2"/><rect x="14" y="9" width="8" height="11" rx="2"/></svg></div>
+        <h3>Responsive Web Design</h3>
+        <p>Making layouts feel right on phones, tablets and desktops.</p>
+        <span class="tag">Exploring</span>
+      </article>
+      <article class="glass skill reveal d1">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l4 14 3-6 6-3z"/><path d="M12 11l6 6"/></svg></div>
+        <h3>Interactive UI &amp; Animation</h3>
+        <p>Scroll-driven motion, transitions and interface details that feel alive.</p>
+        <span class="tag">Exploring</span>
+      </article>
+      <article class="glass skill reveal d2">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg></div>
+        <h3>AI-Assisted Development</h3>
+        <p>Using AI tools to prototype, debug and learn while building.</p>
+        <span class="tag">Exploring</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ D. PROJECTS ============ -->
+<section class="block" id="projects" aria-labelledby="projectsTitle">
+  <div class="wrap">
+    <div class="head glass reveal">
+      <p class="kicker">Featured Projects</p>
+      <h2 id="projectsTitle">Ideas turned into practical projects.</h2>
+      <p class="lead">Concept projects that I've been designing and building as part of my learning.</p>
+    </div>
+
+    <div class="grid projects-grid">
+      <article class="glass project reveal">
+        <div class="art" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/><path d="M13 7l3-3 3 3"/></svg>
+        </div>
+        <div class="body">
+          <span class="badge">Concept Project</span>
+          <h3>Study Progress Tracker</h3>
+          <p>A study-tracking web application concept focused on subject progress, chapters, revision tracking, dashboards, and an organized study workflow.</p>
+          <div class="chips"><span class="chip">Dashboard</span><span class="chip">Revision</span><span class="chip">Workflow</span></div>
+        </div>
+      </article>
+
+      <article class="glass project reveal d1">
+        <div class="art" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 5 5 .5-4 3.5 1.3 5L12 14.3 7.7 17l1.3-5L5 8.5 10 8z"/><path d="M4 4l1.5 1.5M20 4l-1.5 1.5M4 20l1.5-1.5M20 20l-1.5-1.5"/></svg>
+        </div>
+        <div class="body">
+          <span class="badge">Concept Project</span>
+          <h3>Interactive Celebration Website</h3>
+          <p>A cinematic congratulations website concept featuring animated introductions, visual effects, elegant typography, and personalized presentation.</p>
+          <div class="chips"><span class="chip">Animation</span><span class="chip">Typography</span><span class="chip">Visual effects</span></div>
+        </div>
+      </article>
+
+      <article class="glass project reveal d2">
+        <div class="art" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6c3-1.5 6-1.5 9 0 3-1.5 6-1.5 9 0v13c-3-1.5-6-1.5-9 0-3-1.5-6-1.5-9 0z"/><path d="M12 6v13"/></svg>
+        </div>
+        <div class="body">
+          <span class="badge">Concept Project</span>
+          <h3>Interactive Learning Experiences</h3>
+          <p>Educational web experiences designed to present learning material through interactive layouts, clear visual hierarchy, and engaging interface elements.</p>
+          <div class="chips"><span class="chip">Education</span><span class="chip">Layout</span><span class="chip">Interaction</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ E. CREATIVE APPROACH ============ -->
+<section class="block" id="approach" aria-labelledby="approachTitle">
+  <div class="wrap">
+    <div class="glass panel reveal" style="padding:clamp(26px,4vw,48px)">
+      <p class="kicker">My Creative Approach</p>
+      <h2 id="approachTitle">Design, code, motion — and a little AI.</h2>
+      <p class="lead">I'm interested in how design, code and motion work together, and how AI-assisted workflows can speed up learning and experimentation. My goal is to build digital experiences that are both useful and visually engaging.</p>
+      <div class="approach">
+        <div class="pillar"><b>Design</b><span>Clear, calm, intentional</span></div>
+        <div class="pillar"><b>Code</b><span>Clean and understandable</span></div>
+        <div class="pillar"><b>Motion</b><span>Purposeful, never noisy</span></div>
+        <div class="pillar"><b>AI</b><span>A tool for learning faster</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ F. CONTACT ============ -->
+<section class="block" id="contact" aria-labelledby="contactTitle">
+  <div class="wrap">
+    <div class="glass contact reveal">
+      <p class="kicker">Contact</p>
+      <h2 id="contactTitle">Let's build something together.</h2>
+      <p class="lead">If you'd like to talk about web projects, ideas or learning, I'd be glad to connect.</p>
+      <div class="contact-links" id="contactLinks"></div>
+      <p class="contact-note" id="contactNote" hidden>Contact links will appear here once they are added.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ G. FOOTER ============ -->
+<footer class="layer">
+  <p class="glass">Designed &amp; Built by Nadim &middot; <span id="year"></span></p>
+</footer>
+
+<script>
+(() => {
+'use strict';
+
+/* =========================================================
+   EDITABLE CONFIGURATION
+   ========================================================= */
+
+/* CONTACT DETAILS — fill these in later. Leave '' to hide an item.
+   Nothing is invented: only values you provide are displayed. */
+const CONTACT = {
+  email:    '',   // e.g. 'you@example.com'
+  github:   '',   // e.g. 'https://github.com/your-username'
+  linkedin: '',   // e.g. 'https://www.linkedin.com/in/your-id'
+  other:    ''    // any other full URL (optional)
+};
+
+/* IMAGE SEQUENCE SETTINGS */
+const SEQ = {
+  total: 192,                 // frame_001.jpg … frame_192.jpg
+  pad: 3,
+  dir: './frames/',           // relative path (GitHub Pages, case-sensitive)
+  prefix: 'frame_',
+  ext: '.jpg',
+  concurrency: 6,             // controlled parallel requests
+  smoothing: 0.2,             // 0..1 easing toward the scroll position
+  maxDprDesktop: 2,
+  maxDprMobile: 1.5,
+  focusX: 0.5,                // which part is kept when cropping (0 = left, 1 = right)
+  focusY: 0.5                 // (0 = top, 1 = bottom)
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+$('year').textContent = new Date().getFullYear();
+
+/* ---------- Contact links ---------- */
+(function buildContact(){
+  const box = $('contactLinks');
+  const items = [];
+  if (CONTACT.email) items.push(['Email', 'mailto:' + CONTACT.email]);
+  if (/^https?:\/\//i.test(CONTACT.github))   items.push(['GitHub',   CONTACT.github]);
+  if (/^https?:\/\//i.test(CONTACT.linkedin)) items.push(['LinkedIn', CONTACT.linkedin]);
+  if (/^https?:\/\//i.test(CONTACT.other))    items.push(['Website',  CONTACT.other]);
+  items.forEach(([label, href]) => {
+    const a = document.createElement('a');
+    a.className = 'btn'; a.textContent = label; a.href = href;
+    if (href.startsWith('http')) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+    box.appendChild(a);
+  });
+  const top = document.createElement('a');
+  top.className = 'btn ghost'; top.href = '#home'; top.textContent = 'Back to Top';
+  box.appendChild(top);
+  if (!items.length) $('contactNote').hidden = false;
+})();
+
+/* ---------- Navigation ---------- */
+const navToggle = $('navToggle'), navLinks = $('navLinks');
+function setMenu(open){
+  navLinks.classList.toggle('open', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+}
+navToggle.addEventListener('click', () => setMenu(!navLinks.classList.contains('open')));
+navLinks.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+document.addEventListener('click', e => { if (!e.target.closest('#nav')) setMenu(false); });
+
+const spyLinks = [...document.querySelectorAll('[data-spy]')];
+function setActive(id){
+  spyLinks.forEach(a => {
+    const on = a.dataset.spy === id;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+  });
+}
+if ('IntersectionObserver' in window){
+  const spy = new IntersectionObserver(entries => {
+    entries.forEach(en => { if (en.isIntersecting) setActive(en.target.id); });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  spyLinks.forEach(a => { const s = $(a.dataset.spy); if (s) spy.observe(s); });
+}
+setActive('home');
+
+/* ---------- Reveal on scroll ---------- */
+(function reveal(){
+  const els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window) || reduced.matches){
+    els.forEach(el => el.classList.add('in')); return;
+  }
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => { if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -5% 0px' });
+  els.forEach(el => io.observe(el));
+})();
+
+/* =========================================================
+   FULL-PAGE BACKGROUND IMAGE SEQUENCE
+   The canvas is position:fixed behind everything. Progress is the
+   scroll position of the WHOLE PAGE:
+       progress = scrollY / (documentHeight - viewportHeight)
+   so frame 1 is shown at the very top and frame 192 exactly at the
+   very bottom, with no extra empty scroll space.
+   ========================================================= */
+const canvas = $('seq');
+const ctx = canvas.getContext('2d', { alpha: false });
+const N = SEQ.total;
+
+const images = new Array(N);          // loaded Image objects (0-based)
+const state  = new Uint8Array(N);     // 0 idle, 1 loading, 2 loaded, 3 failed
+const tries  = new Uint8Array(N);
+
+/* 0-based index -> "./frames/frame_001.jpg" … "frame_192.jpg" */
+const frameURL = i => SEQ.dir + SEQ.prefix + String(i + 1).padStart(SEQ.pad, '0') + SEQ.ext;
+
+/* ---------- Preload (controlled concurrency, cached in memory) ---------- */
+const queue = [];
+let settled = 0;
+let redrawNeeded = true;
+
+function loadFrame(i){
+  return new Promise(resolve => {
+    state[i] = 1;
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload  = () => { images[i] = img; state[i] = 2; resolve(true); };
+    img.onerror = () => { state[i] = 0; resolve(false); };
+    img.src = frameURL(i);
+  });
+}
+
+/* Frames near the playhead jump to the front of the queue while scrubbing */
+function prioritize(i){
+  if (i < 0 || i >= N || state[i] !== 0) return;
+  const at = queue.indexOf(i);
+  if (at === 0) return;
+  if (at > 0) queue.splice(at, 1);
+  queue.unshift(i);
+}
+
+async function worker(){
+  while (queue.length){
+    const i = queue.shift();
+    if (state[i] !== 0) continue;
+    const ok = await loadFrame(i);
+    if (!ok && tries[i]++ < 1){ queue.push(i); continue; }   // retry once
+    if (!ok) state[i] = 3;                                     // skip gracefully
+    settled++;
+    updateLoader();
+    if (i === frameIdx){ redrawNeeded = true; schedule(); }
+  }
+}
+
+const loader = $('loader'), loaderBar = $('loaderBar'), loaderText = $('loaderText');
+function updateLoader(){
+  const pct = Math.round((settled / N) * 100);
+  loaderBar.style.width = pct + '%';
+  loaderText.textContent = 'Loading ' + pct + '%';
+  if (settled >= N) setTimeout(() => loader.classList.add('done'), 400);
+}
+
+/* If a frame is not ready yet, show the closest loaded one — never a blank canvas */
+function nearest(i){
+  if (state[i] === 2) return i;
+  for (let d = 1; d < N; d++){
+    if (i - d >= 0 && state[i - d] === 2) return i - d;
+    if (i + d < N  && state[i + d] === 2) return i + d;
+  }
+  return -1;
+}
+
+/* ---------- Canvas sizing (edge-to-edge, DPR-capped) ---------- */
+let cw = 0, ch = 0, dpr = 1;
+function resizeCanvas(){
+  const mobile = window.matchMedia('(max-width: 760px)').matches;
+  dpr = Math.min(window.devicePixelRatio || 1, mobile ? SEQ.maxDprMobile : SEQ.maxDprDesktop);
+  cw = canvas.clientWidth; ch = canvas.clientHeight;
+  canvas.width  = Math.round(cw * dpr);
+  canvas.height = Math.round(ch * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  redrawNeeded = true;
+}
+
+/* "Cover" fit: fills the whole viewport, crops the overflow, never stretches */
+let drawnFrame = -1;
+function draw(i){
+  const k = nearest(i);
+  if (k < 0) return;
+  if (k === drawnFrame && !redrawNeeded) return;
+  const img = images[k];
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if (!iw || !ih) return;
+
+  const scale = Math.max(cw / iw, ch / ih);          // uniform scale -> aspect ratio preserved
+  const w = iw * scale, h = ih * scale;
+  const dx = (cw - w) * SEQ.focusX;                   // negative offsets = cropped edges
+  const dy = (ch - h) * SEQ.focusY;
+
+  ctx.drawImage(img, dx, dy, w, h);
+  drawnFrame = k;
+  redrawNeeded = false;
+}
+
+/* ---------- Page scroll -> frame ---------- */
+let maxScroll = 1;      // total scrollable distance of the whole page
+let target = 0;         // desired position (frame units, 0 … N-1)
+let shown  = 0;         // eased position being displayed
+let frameIdx = 0;
+let rafId = 0;
+
+function measure(){
+  maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+}
+
+function readScroll(){
+  const y = window.scrollY || window.pageYOffset || 0;
+  target = clamp(y / maxScroll, 0, 1) * (N - 1);       // 0 at top, N-1 at the very bottom
+  const want = Math.round(target);
+  prioritize(want); prioritize(want + 1); prioritize(want - 1);
+  schedule();
+}
+
+function schedule(){ if (!rafId) rafId = requestAnimationFrame(tick); }
+
+/* The loop runs only while the displayed frame is still catching up,
+   so nothing keeps animating after scrolling stops. */
+function tick(){
+  rafId = 0;
+  if (reduced.matches) shown = target;
+  else {
+    shown += (target - shown) * SEQ.smoothing;
+    if (Math.abs(target - shown) < 0.02) shown = target;   // snap to exact frame 1 / 192
+  }
+  const idx = clamp(Math.round(shown), 0, N - 1);
+  if (idx !== frameIdx || redrawNeeded){ frameIdx = idx; draw(idx); }
+  if (shown !== target) rafId = requestAnimationFrame(tick);
+}
+
+/* ---------- Scroll hint fades once scrolling begins ---------- */
+const hint = $('scrollHint');
+window.addEventListener('scroll', () => {
+  hint.style.opacity = window.scrollY > 40 ? '0' : '1';
+}, { passive: true });
+
+/* ---------- Resize / layout changes ---------- */
+let resizeTimer = 0;
+function onResize(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    // Ignore tiny height changes (mobile URL bar) to avoid re-allocating the canvas
+    if (Math.abs(w - cw) >= 2 || Math.abs(h - ch) >= 120) resizeCanvas();
+    measure(); readScroll();
+  }, 120);
+}
+
+/* Content height can change (fonts, reveal, wrapping) -> keep maxScroll accurate */
+if ('ResizeObserver' in window){
+  new ResizeObserver(() => { measure(); readScroll(); }).observe(document.body);
+}
+
+/* ---------- Boot ---------- */
+async function init(){
+  resizeCanvas();
+  measure();
+
+  // 1) First frame shows immediately, without waiting for the rest
+  const ok = await loadFrame(0);
+  if (!ok) state[0] = 3;
+  settled++; updateLoader();
+  redrawNeeded = true;
+  readScroll();                      // respects a restored scroll position on reload
+  draw(frameIdx);
+
+  // 2) Stream the remaining frames, nearest the current position first
+  for (let i = 1; i < N; i++) queue.push(i);
+  const start = frameIdx;
+  queue.sort((a, b) => Math.abs(a - start) - Math.abs(b - start));
+  for (let k = 0; k < SEQ.concurrency; k++) worker();
+}
+
+window.addEventListener('scroll', readScroll, { passive: true });
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
+window.addEventListener('load', () => { measure(); readScroll(); });
+window.addEventListener('pageshow', e => { if (e.persisted){ redrawNeeded = true; measure(); readScroll(); } });
+
+init();
+
+})();
+</script>
+</body>
+</html>
